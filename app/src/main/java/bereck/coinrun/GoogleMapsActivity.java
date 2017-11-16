@@ -1,7 +1,14 @@
 package bereck.coinrun;
 
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
+import android.provider.Settings;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -38,9 +45,29 @@ public class GoogleMapsActivity extends FragmentActivity implements OnMapReadyCa
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        if(gpsIsActivated() && ContextCompat.checkSelfPermission(this,android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            LocationManager locationManager = (LocationManager)
+                    getSystemService(Context.LOCATION_SERVICE);
+            Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            LatLng myCords = new LatLng(location.getLatitude(),location.getLatitude());
+            addMarker(myCords,"your Position");
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(myCords));
+        } else {
+            // Add a marker in Sydney and move the camera
+            LatLng sydney = new LatLng(-34, 151);
+            addMarker(sydney,"default position");
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        }
     }
+
+    private void addMarker(LatLng latLng, String title) {
+        MarkerOptions markerOptions = new MarkerOptions().position(latLng).title(title);
+        mMap.addMarker(markerOptions);
+    }
+
+    private Boolean gpsIsActivated() {
+        ContentResolver contentResolver = getBaseContext().getContentResolver();
+        return Settings.Secure.isLocationProviderEnabled(contentResolver, LocationManager.GPS_PROVIDER);
+    }
+
 }
